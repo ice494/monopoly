@@ -24,16 +24,25 @@ class GameUI {
     }
 
     init() {
-        this.renderSetupScreen();
-        this.bindSetupEvents();
+        try {
+            this.renderSetupScreen();
+            this.bindSetupEvents();
+        } catch (err) {
+            console.error('游戏初始化失败:', err);
+            alert('游戏初始化失败: ' + err.message + '\n请刷新页面重试，或换用 Chrome/Safari 浏览器。');
+        }
     }
 
     // ========== 设置界面 ==========
     renderSetupScreen() {
         const list = document.getElementById('player-list');
+        if (!list) return;
         list.innerHTML = '';
+        const colors = (typeof PLAYER_COLORS !== 'undefined' && PLAYER_COLORS.length) ? PLAYER_COLORS : [
+            {hex:'#e74c3c'}, {hex:'#3498db'}, {hex:'#2ecc71'}, {hex:'#f1c40f'}, {hex:'#9b59b6'}, {hex:'#e67e22'}
+        ];
         this.setupPlayers.forEach((p, i) => {
-            const color = PLAYER_COLORS[i];
+            const color = colors[i % colors.length];
             const row = document.createElement('div');
             row.className = 'player-row';
             row.innerHTML = `
@@ -76,16 +85,25 @@ class GameUI {
     }
 
     startLocalGame() {
+        if (!this.setupPlayers || this.setupPlayers.length < 2) {
+            alert('至少需要 2 名玩家才能开始游戏，请先点击「+ 添加玩家」。');
+            return;
+        }
         this.mode = 'local';
-        this.engine.init(this.setupPlayers);
-        this.aiPlayers = this.setupPlayers
-            .map((p, i) => p.isAI ? new AIPlayer(this.engine, i) : null)
-            .filter(a => a !== null);
-        this.turnNumber = 1;
-        this.showGameScreen();
-        this.renderBoard();
-        this.updateAll();
-        this.handlePhase();
+        try {
+            this.engine.init(this.setupPlayers);
+            this.aiPlayers = this.setupPlayers
+                .map((p, i) => p.isAI ? new AIPlayer(this.engine, i) : null)
+                .filter(a => a !== null);
+            this.turnNumber = 1;
+            this.showGameScreen();
+            this.renderBoard();
+            this.updateAll();
+            this.handlePhase();
+        } catch (err) {
+            console.error('开始游戏失败:', err);
+            alert('开始游戏失败: ' + err.message);
+        }
     }
 
     // ========== 联机 ==========
