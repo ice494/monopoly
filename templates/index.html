@@ -12,9 +12,14 @@
         <div class="setup-card">
             <div class="setup-title">大富翁</div>
             <div class="setup-subtitle">经典地产经营游戏 · 官方规则</div>
-            <div id="player-list"></div>
-            <div style="display:flex; gap:8px; margin-top:10px;">
-                <button class="btn-add-player" id="add-player-btn" style="flex:1; padding:8px; font-size:14px;">+ 添加玩家</button>
+            <div class="player-count-section">
+                <div class="count-label">选择玩家人数</div>
+                <div class="count-buttons" id="count-buttons">
+                    <button class="btn-count selected" data-count="2">2人</button>
+                    <button class="btn-count" data-count="3">3人</button>
+                    <button class="btn-count" data-count="4">4人</button>
+                </div>
+                <div class="count-hint" id="count-hint">你 + 1个电脑AI</div>
             </div>
             <button class="btn-start-game" id="start-game-btn">开始游戏</button>
             <button class="btn-online" id="online-btn">联机对战</button>

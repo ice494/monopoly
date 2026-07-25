@@ -45,6 +45,22 @@ body { background:#1a1a2e; color:#333; user-select:none; -webkit-user-select:non
 .player-name-input:focus { border-color:#a29bfe; }
 .ai-toggle { display:flex; align-items:center; gap:4px; font-size:13px; color:#636e72; cursor:pointer; }
 .ai-toggle input { width:18px; height:18px; cursor:pointer; }
+/* 玩家人数选择 */
+.player-count-section { margin:10px 0 5px; }
+.count-label { text-align:center; font-size:14px; color:#636e72; margin-bottom:12px; }
+.count-buttons { display:flex; gap:12px; justify-content:center; }
+.btn-count {
+    flex:1; padding:16px 12px; border:2px solid #dfe6e9; border-radius:14px;
+    background:#fff; font-size:20px; font-weight:bold; color:#2d3436;
+    cursor:pointer; transition:all 0.2s; -webkit-tap-highlight-color:transparent;
+}
+.btn-count:active { transform:scale(0.96); }
+.btn-count.selected {
+    border-color:#00b894; background:linear-gradient(135deg,#00b894,#00cec9);
+    color:#fff; box-shadow:0 4px 15px rgba(0,184,148,0.35);
+}
+.count-hint { text-align:center; font-size:13px; color:#b2bec3; margin-top:8px; }
+
 .btn-add-player, .btn-remove-player {
     width:28px; height:28px; border:none; border-radius:6px; cursor:pointer; font-size:18px;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
@@ -392,9 +408,14 @@ body { background:#1a1a2e; color:#333; user-select:none; -webkit-user-select:non
         <div class="setup-card">
             <div class="setup-title">大富翁</div>
             <div class="setup-subtitle">经典地产经营游戏 · 官方规则</div>
-            <div id="player-list"></div>
-            <div style="display:flex; gap:8px; margin-top:10px;">
-                <button class="btn-add-player" id="add-player-btn" style="flex:1; padding:8px; font-size:14px;">+ 添加玩家</button>
+            <div class="player-count-section">
+                <div class="count-label">选择玩家人数</div>
+                <div class="count-buttons" id="count-buttons">
+                    <button class="btn-count selected" data-count="2">2人</button>
+                    <button class="btn-count" data-count="3">3人</button>
+                    <button class="btn-count" data-count="4">4人</button>
+                </div>
+                <div class="count-hint" id="count-hint">你 + 1个电脑AI</div>
             </div>
             <button class="btn-start-game" id="start-game-btn">开始游戏</button>
             <button class="btn-online" id="online-btn">联机对战</button>
@@ -1361,26 +1382,12 @@ class GameUI {
         this.network = null;
         this.mode = 'local';
         this.turnNumber = 1;
-        this.setupPlayers = [
-            {name:'玩家1', isAI:false},
-            {name:'电脑AI', isAI:true}
-        ];
+        this.playerCount = 2;  // 默认2人
         this.pendingCard = null;
         this.diceAnimating = false;
     }
 
     init() {
-        // 分两步分别 try，确保按钮绑定至少能成功
-        try {
-            this.renderSetupScreen();
-        } catch (err) {
-            console.error('渲染设置界面失败:', err);
-            // 失败时手动写一份保底玩家列表
-            const list = document.getElementById('player-list');
-            if (list) {
-                list.innerHTML = '<div class="player-row"><span style="padding:8px;color:#636e72;">玩家1</span></div><div class="player-row"><span style="padding:8px;color:#636e72;">电脑AI</span></div>';
-            }
-        }
         try {
             this.bindSetupEvents();
         } catch (err) {
@@ -1390,38 +1397,23 @@ class GameUI {
 
     // ========== 设置界面 ==========
     renderSetupScreen() {
-        const list = document.getElementById('player-list');
-        if (!list) return;
-        list.innerHTML = '';
-        const colors = (typeof PLAYER_COLORS !== 'undefined' && PLAYER_COLORS.length) ? PLAYER_COLORS : [
-            {hex:'#e74c3c'}, {hex:'#3498db'}, {hex:'#2ecc71'}, {hex:'#f1c40f'}, {hex:'#9b59b6'}, {hex:'#e67e22'}
-        ];
-        this.setupPlayers.forEach((p, i) => {
-            const color = colors[i % colors.length];
-            const row = document.createElement('div');
-            row.className = 'player-row';
-            row.innerHTML = `
-                <div class="player-color-dot" style="background:${color.hex}"></div>
-                <input class="player-name-input" type="text" value="${p.name}" data-idx="${i}" maxlength="10">
-                <label class="ai-toggle"><input type="checkbox" data-idx="${i}" ${p.isAI?'checked':''}>电脑</label>
-                ${this.setupPlayers.length > 2 ? `<button class="btn-remove-player" data-idx="${i}">-</button>` : ''}
-            `;
-            list.appendChild(row);
-        });
-        document.getElementById('add-player-btn').style.display = this.setupPlayers.length >= 6 ? 'none' : 'block';
+        // 人数选择已通过 HTML 内联渲染，这里只做选中态更新
+        this._updateCountSelection();
+    }
 
-        list.querySelectorAll('.player-name-input').forEach(inp => {
-            inp.oninput = e => { this.setupPlayers[+e.target.dataset.idx].name = e.target.value; };
+    _updateCountSelection() {
+        const btns = document.querySelectorAll('.btn-count');
+        const hint = document.getElementById('count-hint');
+        btns.forEach(b => {
+            if (parseInt(b.dataset.count) === this.playerCount) {
+                b.classList.add('selected');
+            } else {
+                b.classList.remove('selected');
+            }
         });
-        list.querySelectorAll('.ai-toggle input').forEach(cb => {
-            cb.onchange = e => { this.setupPlayers[+e.target.dataset.idx].isAI = e.target.checked; };
-        });
-        list.querySelectorAll('.btn-remove-player').forEach(btn => {
-            btn.onclick = e => {
-                this.setupPlayers.splice(+e.target.dataset.idx, 1);
-                this.renderSetupScreen();
-            };
-        });
+        if (hint) {
+            hint.textContent = `你 + ${this.playerCount - 1}个电脑AI`;
+        }
     }
 
     _bindClick(el, handler) {
@@ -1435,29 +1427,35 @@ class GameUI {
     }
 
     bindSetupEvents() {
-        this._bindClick(document.getElementById('add-player-btn'), () => {
-            if (this.setupPlayers.length < 6) {
-                this.setupPlayers.push({name:`玩家${this.setupPlayers.length+1}`, isAI:true});
-                this.renderSetupScreen();
-            }
+        // 人数选择按钮
+        document.querySelectorAll('.btn-count').forEach(btn => {
+            this._bindClick(btn, () => {
+                this.playerCount = parseInt(btn.dataset.count);
+                this._updateCountSelection();
+            });
         });
+        // 开始游戏
         this._bindClick(document.getElementById('start-game-btn'), () => this.startLocalGame());
+        // 联机
         this._bindClick(document.getElementById('online-btn'), () => {
-            document.getElementById('online-panel').classList.toggle('active');
+            const panel = document.getElementById('online-panel');
+            if (panel) panel.classList.toggle('active');
         });
         this._bindClick(document.getElementById('host-game-btn'), () => this.alert('独立版不支持联机模式。请使用电脑版（运行 app.py）进行联机对战。'));
         this._bindClick(document.getElementById('join-game-btn'), () => this.alert('独立版不支持联机模式。请使用电脑版（运行 app.py）进行联机对战。'));
     }
 
     startLocalGame() {
-        if (!this.setupPlayers || this.setupPlayers.length < 2) {
-            alert('至少需要 2 名玩家才能开始游戏，请先点击「+ 添加玩家」。');
-            return;
+        // 根据选择的人数自动生成玩家：玩家1 + (N-1)个AI
+        const players = [{name:'你', isAI:false}];
+        for (let i = 1; i < this.playerCount; i++) {
+            players.push({name:`电脑AI ${i}`, isAI:true});
         }
+
         this.mode = 'local';
         try {
-            this.engine.init(this.setupPlayers);
-            this.aiPlayers = this.setupPlayers
+            this.engine.init(players);
+            this.aiPlayers = players
                 .map((p, i) => p.isAI ? new AIPlayer(this.engine, i) : null)
                 .filter(a => a !== null);
             this.turnNumber = 1;
