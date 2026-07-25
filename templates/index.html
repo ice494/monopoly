@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>大富翁 Monopoly</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- 设置界面 -->
+    <div id="setup-screen">
+        <div class="setup-card">
+            <div class="setup-title">大富翁</div>
+            <div class="setup-subtitle">经典地产经营游戏 · 官方规则</div>
+            <div id="player-list"></div>
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <button class="btn-add-player" id="add-player-btn" style="flex:1; padding:8px; font-size:14px;">+ 添加玩家</button>
+            </div>
+            <button class="btn-start-game" id="start-game-btn">开始游戏</button>
+            <button class="btn-online" id="online-btn">联机对战</button>
+            <div class="online-panel" id="online-panel">
+                <input class="online-input" id="server-url-input" placeholder="服务器地址 (如 ws://192.168.1.100:5000/ws)" value="">
+                <button class="btn-start-game" id="host-game-btn" style="background:linear-gradient(135deg,#6c5ce7,#a29bfe);">创建房间(主机)</button>
+                <button class="btn-start-game" id="join-game-btn" style="background:linear-gradient(135deg,#e17055,#fd79a8);">加入房间</button>
+                <div class="online-status" id="online-status"></div>
+            </div>
+            <div class="setup-info">
+                ✅ 单人 vs 电脑 AI<br>
+                ✅ 多人同设备轮流游玩<br>
+                ✅ 多设备联机对战 (同WiFi)<br>
+                ✅ 横屏操作 · 官方规则<br>
+                ✅ 建造房屋酒店·抵押·拍卖
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏界面 -->
+    <div id="game-screen">
+        <div class="game-container">
+            <div class="board-wrapper">
+                <div class="board" id="board"></div>
+            </div>
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <span>大富翁</span>
+                    <span class="turn-indicator" id="turn-indicator">回合 1</span>
+                </div>
+                <div class="players-panel" id="players-panel"></div>
+                <div class="action-panel" id="action-panel"></div>
+                <div class="log-panel" id="log-panel"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-card" id="modal-content"></div>
+    </div>
+
+    <script src="/static/game.js"></script>
+    <script src="/static/ui.js"></script>
+</body>
+</html>
