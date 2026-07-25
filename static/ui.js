@@ -63,12 +63,17 @@ class GameUI {
 
     _bindClick(el, handler) {
         if (!el) return;
-        // 同时绑定 click 和 touchstart，保证移动端和桌面端都能触发
-        el.addEventListener('click', handler);
-        el.addEventListener('touchend', (e) => {
-            e.preventDefault();
+        // 同时绑定 click 和 touchend，保证移动端和桌面端都能触发
+        // 注意：不能 e.preventDefault()，否则在移动端 WebView 中会阻止后续 click 事件！
+        let lastFire = 0;
+        const guarded = (e) => {
+            const now = Date.now();
+            if (now - lastFire < 300) return;  // 防抖：touchend 和 click 只触发一次
+            lastFire = now;
             handler(e);
-        });
+        };
+        el.addEventListener('click', guarded);
+        el.addEventListener('touchend', guarded);
     }
 
     bindSetupEvents() {
@@ -1000,7 +1005,8 @@ function _tryInit() {
 _tryInit();
 // 兜底：如果 DOMContentLoaded 也没触发，1.5 秒后强制初始化
 setTimeout(() => {
-    if (!document.getElementById('player-list') || !document.getElementById('player-list').children.length) {
+    if (!document.getElementById('start-game-btn')) {
+        console.warn('ui: 兜底初始化');
         ui.init();
     }
 }, 1500);
