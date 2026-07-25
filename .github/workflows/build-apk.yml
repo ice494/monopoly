@@ -1,0 +1,91 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Set up Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Android SDK command-line tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget unzip
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        cd $ANDROID_SDK_ROOT/cmdline-tools
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+        unzip -q commandlinetools-linux-11076708_latest.zip
+        mv cmdline-tools latest
+        rm commandlinetools-linux-11076708_latest.zip
+        echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+    - name: Accept Android SDK licenses
+      run: |
+        yes | sdkmanager --licenses || true
+
+    - name: Install required Android SDK packages
+      run: |
+        sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0" "cmdline-tools;latest"
+
+    - name: Install Cordova
+      run: npm install -g cordova@12
+
+    - name: Generate standalone HTML
+      run: python build_standalone.py
+
+    - name: Create Cordova project
+      run: |
+        cordova create monopoly-app com.monopoly.game "Monopoly" --no-telemetry
+        cp -r cordova/www/* monopoly-app/www/
+        cp cordova/config.xml monopoly-app/config.xml
+
+    - name: Add Android platform
+      run: |
+        cd monopoly-app
+        cordova platform add android@13 --no-telemetry
+
+    - name: Build APK
+      run: |
+        cd monopoly-app
+        cordova build android --debug --no-telemetry
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: monopoly-android-apk
+        path: monopoly-app/platforms/android/app/build/outputs/apk/debug/*.apk
+        retention-days: 90
+
+    - name: Display download info
+      run: |
+        echo "========================================"
+        echo "  APK 构建完成！"
+        echo "  在页面下方的 Artifacts 中下载"
+        echo "  文件名: monopoly-android-apk"
+        echo "========================================"
