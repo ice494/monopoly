@@ -24,12 +24,21 @@ class GameUI {
     }
 
     init() {
+        // 分两步分别 try，确保按钮绑定至少能成功
         try {
             this.renderSetupScreen();
+        } catch (err) {
+            console.error('渲染设置界面失败:', err);
+            // 失败时手动写一份保底玩家列表
+            const list = document.getElementById('player-list');
+            if (list) {
+                list.innerHTML = '<div class="player-row"><span style="padding:8px;color:#636e72;">玩家1</span></div><div class="player-row"><span style="padding:8px;color:#636e72;">电脑AI</span></div>';
+            }
+        }
+        try {
             this.bindSetupEvents();
         } catch (err) {
-            console.error('游戏初始化失败:', err);
-            alert('游戏初始化失败: ' + err.message + '\n请刷新页面重试，或换用 Chrome/Safari 浏览器。');
+            console.error('绑定事件失败:', err);
         }
     }
 
@@ -69,19 +78,29 @@ class GameUI {
         });
     }
 
+    _bindClick(el, handler) {
+        if (!el) return;
+        // 同时绑定 click 和 touchstart，保证移动端和桌面端都能触发
+        el.addEventListener('click', handler);
+        el.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handler(e);
+        });
+    }
+
     bindSetupEvents() {
-        document.getElementById('add-player-btn').onclick = () => {
+        this._bindClick(document.getElementById('add-player-btn'), () => {
             if (this.setupPlayers.length < 6) {
                 this.setupPlayers.push({name:`玩家${this.setupPlayers.length+1}`, isAI:true});
                 this.renderSetupScreen();
             }
-        };
-        document.getElementById('start-game-btn').onclick = () => this.startLocalGame();
-        document.getElementById('online-btn').onclick = () => {
+        });
+        this._bindClick(document.getElementById('start-game-btn'), () => this.startLocalGame());
+        this._bindClick(document.getElementById('online-btn'), () => {
             document.getElementById('online-panel').classList.toggle('active');
-        };
-        document.getElementById('host-game-btn').onclick = () => this.startHostGame();
-        document.getElementById('join-game-btn').onclick = () => this.joinOnlineGame();
+        });
+        this._bindClick(document.getElementById('host-game-btn'), () => this.startHostGame());
+        this._bindClick(document.getElementById('join-game-btn'), () => this.joinOnlineGame());
     }
 
     startLocalGame() {
@@ -980,6 +999,19 @@ class GameUI {
     }
 }
 
-// 初始化
+// 初始化——使用 DOMContentLoaded 替代 load，避免手机 WebView 兼容问题
 const ui = new GameUI();
-window.addEventListener('load', () => ui.init());
+function _tryInit() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => ui.init());
+    } else {
+        ui.init();
+    }
+}
+_tryInit();
+// 兜底：如果 DOMContentLoaded 也没触发，1.5 秒后强制初始化
+setTimeout(() => {
+    if (!document.getElementById('player-list') || !document.getElementById('player-list').children.length) {
+        ui.init();
+    }
+}, 1500);

@@ -99,14 +99,15 @@ def build_standalone():
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html)
-    print(f"独立版 HTML 已生成: {{output_path}}")
-    print(f"文件大小: {{os.path.getsize(output_path) / 1024:.1f}} KB")
+    size_kb = os.path.getsize(output_path) / 1024
+    print(f"独立版 HTML 已生成: {output_path}")
+    print(f"文件大小: {size_kb:.1f} KB")
 
     # 同时生成一份在项目根目录
     root_path = os.path.join(BASE_DIR, 'standalone.html')
     with open(root_path, 'w', encoding='utf-8') as f:
         f.write(html)
-    print(f"根目录副本: {{root_path}}")
+    print(f"根目录副本: {root_path}")
 
 if __name__ == '__main__':
     build_standalone()
