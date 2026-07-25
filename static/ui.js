@@ -23,9 +23,21 @@ class GameUI {
     init() {
         try {
             this.bindSetupEvents();
+            this._initSidebarToggle();
         } catch (err) {
             console.error('绑定事件失败:', err);
         }
+    }
+
+    _initSidebarToggle() {
+        const toggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+        if (!toggle || !sidebar) return;
+        toggle.onclick = () => sidebar.classList.toggle('open');
+        // 点击棋盘区域自动关闭侧边栏
+        document.querySelector('.board-wrapper')?.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+        });
     }
 
     // ========== 设置界面 ==========
