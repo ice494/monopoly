@@ -56,6 +56,13 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova@12
 
+    - name: Install Gradle 8.7
+      run: |
+        wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip
+        unzip -q gradle-8.7-bin.zip
+        echo "$PWD/gradle-8.7/bin" >> $GITHUB_PATH
+        rm gradle-8.7-bin.zip
+
     - name: Generate standalone HTML
       run: python build_standalone.py
 
